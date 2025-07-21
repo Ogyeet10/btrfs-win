@@ -82,6 +82,18 @@ static void get_uuid(BTRFS_UUID* uuid) {
     }
 }
 
+/**
+ * Copies a Btrfs tree node to a new address as part of snapshot creation.
+ *
+ * Reads a tree node from the specified address, allocates a new address for the snapshot, updates metadata, increases extent reference counts as needed, calculates the checksum, and writes the new node. Handles both leaf and internal nodes, manages rollback on failure, and updates the output parameter with the new address on success.
+ *
+ * @param addr Address of the tree node to copy.
+ * @param subvol Subvolume root structure for the snapshot.
+ * @param newaddr Output parameter that receives the new address of the copied node on success.
+ * @param Irp Pointer to the IRP for the operation.
+ * @param rollback List for rollback actions in case of failure.
+ * @returns NTSTATUS code indicating success or failure.
+ */
 static NTSTATUS snapshot_tree_copy(device_extension* Vcb, uint64_t addr, root* subvol, uint64_t* newaddr, PIRP Irp, LIST_ENTRY* rollback) {
     uint8_t* buf;
     NTSTATUS Status;

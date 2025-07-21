@@ -2192,7 +2192,13 @@ void get_raid56_lock_range(chunk* c, uint64_t address, uint64_t length, uint64_t
     *locklen = (endoff - startoff) * datastripes;
 }
 
-__attribute__((nonnull(1,3)))
+/**
+     * Performs a complete write operation to a chunk, handling RAID locking, write preparation, and synchronization.
+     *
+     * Initializes the write context, acquires necessary locks for RAID5/6, prepares and issues write operations to all stripes, waits for completion, and checks for errors. Returns the status of the write operation.
+     * @returns NTSTATUS code indicating success or failure of the write operation.
+     */
+    __attribute__((nonnull(1,3)))
 NTSTATUS write_data_complete(device_extension* Vcb, uint64_t address, void* data, uint32_t length, PIRP Irp, chunk* c, bool file_write, uint64_t irp_offset, ULONG priority) {
     write_data_context wtc;
     NTSTATUS Status;
@@ -2276,6 +2282,12 @@ NTSTATUS write_data_complete(device_extension* Vcb, uint64_t address, void* data
     return Status;
 }
 
+/**
+ * IO completion routine for a single stripe write in a multi-stripe (RAID) write operation.
+ *
+ * Updates the status of the completed stripe, cancels pending IRPs for other stripes on error, and signals completion when all stripes have finished.
+ * Always returns STATUS_MORE_PROCESSING_REQUIRED to indicate further processing is needed by the caller.
+ */
 __attribute__((nonnull(2,3)))
 _Function_class_(IO_COMPLETION_ROUTINE)
 static NTSTATUS __stdcall write_data_completion(PDEVICE_OBJECT DeviceObject, PIRP Irp, PVOID conptr) {
