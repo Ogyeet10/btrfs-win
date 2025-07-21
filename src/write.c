@@ -2201,6 +2201,7 @@ NTSTATUS write_data_complete(device_extension* Vcb, uint64_t address, void* data
     KeInitializeEvent(&wtc.Event, NotificationEvent, false);
     InitializeListHead(&wtc.stripes);
     wtc.stripes_left = 0;
+    KeInitializeSpinLock(&wtc.spinlock);
     wtc.parity1 = wtc.parity2 = wtc.scratch = NULL;
     wtc.mdl = wtc.parity1_mdl = wtc.parity2_mdl = NULL;
 
@@ -2281,10 +2282,11 @@ static NTSTATUS __stdcall write_data_completion(PDEVICE_OBJECT DeviceObject, PIR
     write_data_stripe* stripe = conptr;
     write_data_context* context = (write_data_context*)stripe->context;
     LIST_ENTRY* le;
+    KIRQL irql;
 
     UNUSED(DeviceObject);
 
-    // FIXME - we need a lock here
+    KeAcquireSpinLock(&context->spinlock, &irql);
 
     if (stripe->status == WriteDataStatus_Cancelling) {
         stripe->status = WriteDataStatus_Cancelled;
@@ -2313,6 +2315,8 @@ static NTSTATUS __stdcall write_data_completion(PDEVICE_OBJECT DeviceObject, PIR
     }
 
 end:
+    KeReleaseSpinLock(&context->spinlock, irql);
+
     if (InterlockedDecrement(&context->stripes_left) == 0)
         KeSetEvent(&context->Event, 0, false);
 

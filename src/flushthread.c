@@ -1703,6 +1703,7 @@ NTSTATUS do_tree_writes(device_extension* Vcb, LIST_ENTRY* tree_writes, bool no_
         InitializeListHead(&wtc[bit_num].stripes);
         wtc[bit_num].need_wait = false;
         wtc[bit_num].stripes_left = 0;
+        KeInitializeSpinLock(&wtc[bit_num].spinlock);
         wtc[bit_num].parity1 = wtc[bit_num].parity2 = wtc[bit_num].scratch = NULL;
         wtc[bit_num].mdl = wtc[bit_num].parity1_mdl = wtc[bit_num].parity2_mdl = NULL;
 

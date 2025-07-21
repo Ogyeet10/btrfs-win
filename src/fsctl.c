@@ -184,6 +184,7 @@ static NTSTATUS snapshot_tree_copy(device_extension* Vcb, uint64_t addr, root* s
     KeInitializeEvent(&wtc.Event, NotificationEvent, false);
     InitializeListHead(&wtc.stripes);
     wtc.stripes_left = 0;
+    KeInitializeSpinLock(&wtc.spinlock);
 
     Status = write_data(Vcb, t.new_address, buf, Vcb->superblock.node_size, &wtc, NULL, NULL, false, 0, NormalPagePriority);
     if (!NT_SUCCESS(Status)) {
