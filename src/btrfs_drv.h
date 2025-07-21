@@ -912,6 +912,7 @@ typedef struct _write_data_context {
     KEVENT Event;
     LIST_ENTRY stripes;
     LONG stripes_left;
+    KSPIN_LOCK spinlock;
     bool need_wait;
     uint8_t *parity1, *parity2, *scratch;
     PMDL mdl, parity1_mdl, parity2_mdl;

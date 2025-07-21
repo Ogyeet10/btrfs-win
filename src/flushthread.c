@@ -1617,6 +1617,15 @@ static NTSTATUS update_root_root(device_extension* Vcb, bool no_cache, PIRP Irp,
     return STATUS_SUCCESS;
 }
 
+/**
+ * Writes all pending tree blocks to disk, merging adjacent writes and handling RAID5/6 partial stripe flushes as needed.
+ *
+ * Merges adjacent tree write operations into contiguous runs, allocates and initializes write contexts, and issues write operations for each tree block. Waits for all writes to complete, checks for errors, and logs device errors if encountered. If any chunk uses RAID5 or RAID6, flushes any pending partial stripes after the writes. Frees all allocated resources before returning.
+ *
+ * @param tree_writes List of tree_write structures representing pending tree block writes.
+ * @param no_free If true, prevents freeing of tree_write data buffers after merging.
+ * @returns STATUS_SUCCESS on success, or an appropriate NTSTATUS error code on failure.
+ */
 NTSTATUS do_tree_writes(device_extension* Vcb, LIST_ENTRY* tree_writes, bool no_free) {
     chunk* c;
     LIST_ENTRY* le;
@@ -1703,6 +1712,7 @@ NTSTATUS do_tree_writes(device_extension* Vcb, LIST_ENTRY* tree_writes, bool no_
         InitializeListHead(&wtc[bit_num].stripes);
         wtc[bit_num].need_wait = false;
         wtc[bit_num].stripes_left = 0;
+        KeInitializeSpinLock(&wtc[bit_num].spinlock);
         wtc[bit_num].parity1 = wtc[bit_num].parity2 = wtc[bit_num].scratch = NULL;
         wtc[bit_num].mdl = wtc[bit_num].parity1_mdl = wtc[bit_num].parity2_mdl = NULL;
 
